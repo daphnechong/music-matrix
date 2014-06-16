@@ -5,43 +5,83 @@
 
 <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/q.js/1.0.1/q.js"></script>
 <script>
+
+// https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
+// window.onload = init;
+var sampleRate = 44100.0;
+// var numberOfNotes = 72; // play over a 6 octave range
+ var noteDuration = 0.2;
+//var noteSpacing = noteDuration + 0.005; // leave 5ms of silence between each "note"
+// var lengthInSeconds = numberOfNotes * noteSpacing;
+// var context = 0;
+// var sinWaveBuffer = 0;
+
+function createOneCycleSinWaveBuffer(frequency) {
+    var duration = 1 / frequency;
+    var sampleFrameLength = duration * sampleRate;
+    
+    var audioBuffer = context.createBuffer(2, sampleFrameLength, sampleRate);
+    var n = audioBuffer.length;
+    var channelL = audioBuffer.getChannelData(0);
+    var channelR = audioBuffer.getChannelData(1);
+    for (var i = 0; i < n; ++i) {
+        channelL[i] = Math.sin(frequency * 2.0*Math.PI * i / sampleRate);
+        channelR[i] = channelL[i];
+    }
+    return audioBuffer;
+}
+
+
 var context;
 window.addEventListener('load', init, false);
 
 function loadSound(url) {
-  var deferred = Q.defer();
-  var request = new XMLHttpRequest();
-  request.open('GET', url, true);
-  request.responseType = 'arraybuffer';
-
-  // Decode asynchronously
-  request.onload = function() {
-    context.decodeAudioData(request.response, function(buffer) {
-      deferred.resolve(buffer);
-    }, function(e) {
-      deferred.reject(e);
-    });
-  }
-  request.send();
-  return deferred.promise;
+  buffer = createOneCycleSinWaveBuffer(440.0);
+  return Q(buffer); 
 }
 
 function loopSound(buffer) {
-  for (var i = 0; i < 10; i++) {
-    // Assume a new source was created from a buffer.
-    var semitoneRatio = Math.pow(2, i/12);
-    playSound(buffer, i, semitoneRatio);
+  var numberOfNotes = 12;
+  var playbackRates = [];
+
+  for (var i = 0; i < numberOfNotes; i++) 
+  {
+    var semitone = i;
+    var playbackRate = Math.pow(2, semitone / 12);
+    playbackRates.push(playbackRate);
   } 
+
+  for (var i = 0; i < numberOfNotes; i++) {
+    var index = Math.round(Math.random() * numberOfNotes);
+    playSound(buffer, i*0.2, playbackRates[index], 0.2);
+  }
 }
 
-function playSound(buffer, time, semitone) {
+
+function playSound(buffer, time, playbackRate, duration) {
   var source = context.createBufferSource(); // creates a sound source
   source.buffer = buffer;                    // tell the source which sound to play
   source.connect(context.destination);       // connect the source to the context's destination (the speakers)
-  source.playbackRate.value = semitone;
-  source.start(time, 0, 0.15);                           // play the source now
+
+
+  // Apply quick fade-in and fade-out to avoid clicks.
+  // https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
+  var gainNode = context.createGainNode();
+  gainNode.gain.value = 0;
+  gainNode.gain.setValueAtTime(0, time);
+  gainNode.gain.linearRampToValueAtTime(1, time + 0.005);
+  gainNode.gain.setValueAtTime(1, time + duration - 0.005);
+  gainNode.gain.linearRampToValueAtTime(0, time + duration);
+  source.connect(gainNode);
+  gainNode.connect(context.destination);
+
+  source.playbackRate.value = playbackRate;
+  source.loop = true;
+  source.start(time);                           // play the source now
+  source.stop(time + duration);
   return buffer;                             // note: on older systems, may have to use deprecated noteOn(time);
 }
+
 
 function init() {
   try {
