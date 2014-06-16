@@ -1,10 +1,15 @@
 {
-	"name": "wwc-tutorial",
-	"main": "app.js",
-	"dependencies": {
-		"express": "~4.0.0"
-	},
-	"scripts": { 
-    	"start": "nodemon app.js" 
-  	}
+  "name": "wwc-tutorial",
+  "main": "app.js",
+  "dependencies": {
+    "express": "~4.0.0"
+  },
+  "scripts": {
+    "start": "nodemon app.js"
+  },
+  "version": "0.0.0",
+  "description": "A html5 web audio / video api tutorial for women who code",
+  "devDependencies": {},
+  "author": "Daphne Chong",
+  "license": "ISC"
 }

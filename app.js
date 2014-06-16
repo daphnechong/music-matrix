@@ -1,10 +1,6 @@
 var express    = require('express'); 		// call express
 var app        = express(); 				// define our app using express
-var bodyParser = require('body-parser');
 
-// configure app to use bodyParser()
-// this will let us get the data from a POST
-app.use(bodyParser());
 app.use(express.static(__dirname + '/public'));
 
 var port = process.env.PORT || 3000; 		// set our port
@@ -22,7 +18,12 @@ router.use(function(req, res, next) {
 
 // test route to make sure everything is working (accessed at GET http://localhost:8080/api)
 router.get('/', function(req, res) {
-	res.sendfile(__dirname + '/public/views/index.html');	
+	res.sendfile(__dirname + '/public/web-audio-api.html');	
+});
+
+router.get('/sampleTone', function(req, res) {
+	 res.header('Access-Control-Allow-Origin', '*');
+	 res.sendfile(__dirname + '/public/tone.mp3');
 });
 
 app.use('/', router);
