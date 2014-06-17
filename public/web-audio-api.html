@@ -2,12 +2,73 @@
 <head>
 </head>
 <body>
+<div class="grid">
+  <div id="group-1">
+    <input class="button" type="checkbox" value="1"/>
+    <input class="button" type="checkbox" value="2"/>
+    <input class="button" type="checkbox" value="3"/>
+    <input class="button" type="checkbox" value="4"/>
+    <input class="button" type="checkbox" value="5"/>
+    <input class="button" type="checkbox" value="6"/>
+    <input class="button" type="checkbox" value="7"/>
+    <input class="button" type="checkbox" value="8"/>
+    <input class="button" type="checkbox" value="9"/>
+    <input class="button" type="checkbox" value="10"/>
+    <input class="button" type="checkbox" value="11"/>
+    <input class="button" type="checkbox" value="12"/>
+  </div>
+    <div id="group-2">
+    <input class="button" type="checkbox" value="1"/>
+    <input class="button" type="checkbox" value="2"/>
+    <input class="button" type="checkbox" value="3"/>
+    <input class="button" type="checkbox" value="4"/>
+    <input class="button" type="checkbox" value="5"/>
+    <input class="button" type="checkbox" value="6"/>
+    <input class="button" type="checkbox" value="7"/>
+    <input class="button" type="checkbox" value="8"/>
+    <input class="button" type="checkbox" value="9"/>
+    <input class="button" type="checkbox" value="10"/>
+    <input class="button" type="checkbox" value="11"/>
+    <input class="button" type="checkbox" value="12"/>
+  </div>
+  <div id="group-3">
+    <input class="button" type="checkbox" value="1"/>
+    <input class="button" type="checkbox" value="2"/>
+    <input class="button" type="checkbox" value="3"/>
+    <input class="button" type="checkbox" value="4"/>
+    <input class="button" type="checkbox" value="5"/>
+    <input class="button" type="checkbox" value="6"/>
+    <input class="button" type="checkbox" value="7"/>
+    <input class="button" type="checkbox" value="8"/>
+    <input class="button" type="checkbox" value="9"/>
+    <input class="button" type="checkbox" value="10"/>
+    <input class="button" type="checkbox" value="11"/>
+    <input class="button" type="checkbox" value="12"/>
+  </div>
+    <div id="group-4">
+    <input class="button" type="checkbox" value="1"/>
+    <input class="button" type="checkbox" value="2"/>
+    <input class="button" type="checkbox" value="3"/>
+    <input class="button" type="checkbox" value="4"/>
+    <input class="button" type="checkbox" value="5"/>
+    <input class="button" type="checkbox" value="6"/>
+    <input class="button" type="checkbox" value="7"/>
+    <input class="button" type="checkbox" value="8"/>
+    <input class="button" type="checkbox" value="9"/>
+    <input class="button" type="checkbox" value="10"/>
+    <input class="button" type="checkbox" value="11"/>
+    <input class="button" type="checkbox" value="12"/>
+  </div>
+</div>
 
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/q.js/1.0.1/q.js"></script>
 <script>
 
 // https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
 // window.onload = init;
+var playbackRates, intervals = [];
+var buffer;
 var sampleRate = 44100.0;
 // var numberOfNotes = 72; // play over a 6 octave range
  var noteDuration = 0.2;
@@ -31,7 +92,6 @@ function createOneCycleSinWaveBuffer(frequency) {
     return audioBuffer;
 }
 
-
 var context;
 window.addEventListener('load', init, false);
 
@@ -42,27 +102,32 @@ function loadSound(url) {
 
 function loopSound(buffer) {
   var numberOfNotes = 12;
-  var playbackRates = [];
 
   for (var i = 0; i < numberOfNotes; i++) 
   {
     var semitone = i;
     var playbackRate = Math.pow(2, semitone / 12);
-    playbackRates.push(playbackRate);
-  } 
 
-  for (var i = 0; i < numberOfNotes; i++) {
-    var index = Math.round(Math.random() * numberOfNotes);
-    playSound(buffer, i*0.2, playbackRates[index], 0.2);
-  }
+    var properties = { 
+      buffer: buffer, 
+      playbackRate: playbackRate, 
+      duration: 0.2
+    }
+
+    playbackRates.push(properties);
+  } 
 }
 
+function playSound(properties) {
+  //buffer, time, playbackRate, duration
+  //buffer = properties.buffer;
+  time = context.currentTime;
+  playbackRate = properties.playbackRate;
+  duration = properties.duration;
 
-function playSound(buffer, time, playbackRate, duration) {
   var source = context.createBufferSource(); // creates a sound source
-  source.buffer = buffer;                    // tell the source which sound to play
+  source.buffer = properties.buffer;         // tell the source which sound to play
   source.connect(context.destination);       // connect the source to the context's destination (the speakers)
-
 
   // Apply quick fade-in and fade-out to avoid clicks.
   // https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
@@ -82,6 +147,10 @@ function playSound(buffer, time, playbackRate, duration) {
   return buffer;                             // note: on older systems, may have to use deprecated noteOn(time);
 }
 
+function playNotes($elem) {
+    console.log($elem.attr('id'));
+    setTimeout(function() { playNotes($elem) }, 2000);
+}
 
 function init() {
   try {
@@ -96,6 +165,17 @@ function init() {
 
   var url = 'http://localhost:3000/sampleTone';
   loadSound(url).then(loopSound);
+
+  $(".grid").children().each(function(index){
+    var i = $(this);
+    setTimeout(function() { 
+      playNotes(i)
+    }, index * 500);
+  })
+  // $(".button").click('click', function() {
+  //   var properties = playbackRates[$(this).val()-1];
+  //   playSound(properties)
+  // })
 }
 
 </script>
