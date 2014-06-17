@@ -299,7 +299,6 @@
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
-<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/q.js/1.0.1/q.js"></script>
 <script>
 //http://flippinawesome.org/2014/03/31/creating-sound-with-the-web-audio-api-and-oscillators/
 //http://www.softsynth.com/webaudio/tone.php
@@ -310,26 +309,28 @@ var noteCatalogue=[];
 var gainNode, oscillator;
 var sampleRate = 44100.0;
 
+// this is a C major scale 
 var frequencies = [
-'220.00',
-'246.94',
-'261.63',
-'293.66',
-'329.63',
-'349.23',
-'392.00',
-'440.00',
-'493.88',
-'523.25',
-'587.33',
-'659.25',
-'698.46',
-'783.99',
-'880.00', 
-'987.77']
+'261.63',  // c4
+'293.66',  // d4
+'329.63',  // e4
+'349.23',  // f4
+'392.00',  // g4
+'440.00',  // a4
+'493.88',  // b4
+'523.25',  // c5
+'587.33',  // d5
+'659.25',  // e5
+'698.46',  // f5
+'783.99',  // g5
+'880.00',  // a5
+'987.77',  // b5 
+'1046.50', // c6
+'1174.66']  // d6
 
 frequencies.reverse();
 
+// ended up much more mathematical than I intended...!
 // sound is a wave. 
 // the frequency, or hertz, is the note you hear. it affects how fast the wave oscillates.
 // an oscillator can generate you a wave (e.g. sine, triangle, sawtooth) which produces different notes.
@@ -348,8 +349,8 @@ frequencies.reverse();
 //  -  clipping the front of the note to stop the clicking
 //  -  change stop time to add extra duration, + add linear ramp to value to the new duration to fade out
 //  -  add multiple ramps up/down to introduce bouncing
-//  -  add multiple oscillators to alternate the wave.
 //  -  change frequencies of notes so that they are all in a common scale 
+//  -  changing the oscillation wave type
 
 // problems - timeout is starting to lag with multiple notes playing.
 
@@ -382,12 +383,18 @@ function playNotesInColumn($elem) {
   $elem.children(':checked').each(function() {
     playSound($(this).val() - 1);
   });
+
+  // Repeat this column every 2 seconds, since there are 16 columns at 125ms intervals. 
+  // This simple implementation of timeout isn't really a long term solution, it will start 
+  // lagging eventually if cpu is processing other things when timeout is supposed to fire
   setTimeout(function() {
    playNotesInColumn($elem) 
-  }, 2000); // repeat this column every 2 seconds. 
+  }, 2000); 
+
 }
 
 function loopSound() {
+  // Kick off the loop. Each column represents 125ms worth of time.
   $(".grid").children().each(function(index){
     var i = $(this);
     setTimeout(function() { 
