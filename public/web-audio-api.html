@@ -65,20 +65,15 @@
 <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/q.js/1.0.1/q.js"></script>
 <script>
 
+//http://www.softsynth.com/webaudio/tone.php
 // https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
-// window.onload = init;
+
 var noteCatalogue=[];
-var buffer;
+var gainNode;
 var sampleRate = 44100.0;
-var noteDuration = 0.2;
-// var numberOfNotes = 72; // play over a 6 octave range
+var frequency = 440.0
 
-//var noteSpacing = noteDuration + 0.005; // leave 5ms of silence between each "note"
-// var lengthInSeconds = numberOfNotes * noteSpacing;
-// var context = 0;
-// var sinWaveBuffer = 0;
-
-function createOneCycleSinWaveBuffer(frequency) {
+function createSoundBuffer() {
     var duration = 1 / frequency;
     var sampleFrameLength = duration * sampleRate;
     
@@ -90,18 +85,10 @@ function createOneCycleSinWaveBuffer(frequency) {
         channelL[i] = Math.sin(frequency * 2.0*Math.PI * i / sampleRate);
         channelR[i] = channelL[i];
     }
-    return audioBuffer;
+    return Q(audioBuffer);
 }
 
-var context;
-window.addEventListener('load', init, false);
-
-function loadSound() {
-  buffer = createOneCycleSinWaveBuffer(440.0);
-  return Q(buffer); 
-}
-
-function loadNoteScale(buffer) {
+function loadNoteCatalogue(buffer) {
   var numberOfNotes = 12;
 
   for (var i = 0; i < numberOfNotes; i++) 
@@ -109,36 +96,39 @@ function loadNoteScale(buffer) {
     noteCatalogue.push({ 
       buffer: buffer, 
       playbackRate: Math.pow(2, i / 12), 
-      duration: 0.2
+      duration: 0.4
     });
   } 
   return noteCatalogue;
 }
 
+// sound is a wave. 
+// changing frequency changes the length of the note. use .stop and .start with a duration, and loop the wave.
+// clicks are produced when the frequency 'jumps', producing breaks in the wave.  
+// It's a pipeline. Only one thing needs to output to your speakers! (context.destination)
+// everything else - volume, distortion, etc. just chains from the source to the destination. 
+// each audio buffer souce can only be played once. you need to recreate each new note to play.
+
 function playSound(note) {
   time = context.currentTime;
   duration = note.duration;
 
-  var source = context.createBufferSource(); // creates a sound source
-  source.buffer = note.buffer;         // tell the source which sound to play
+  var source = context.createBufferSource(); // creates a sound source. needs to be done each time. 
+  source.buffer = note.buffer;               // tell the source which sound to play
   source.playbackRate.value = note.playbackRate;
   source.loop = true;
+  source.start(time);                           
+  source.stop(time + duration);
   
   // Apply quick fade-in and fade-out to avoid clicks.
   // https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
-  var gainNode = context.createGain();
   gainNode.gain.value = 0;
-  gainNode.gain.setValueAtTime(0, time);
-  gainNode.gain.linearRampToValueAtTime(1, time + 0.7);
-  gainNode.gain.setValueAtTime(1, time + duration - 0.7);
-  gainNode.gain.linearRampToValueAtTime(0, time + duration);
+  gainNode.gain.linearRampToValueAtTime(0.5, time + 0.05);
+  gainNode.gain.setValueAtTime(0.5, time + duration - 0.05);
+  gainNode.gain.linearRampToValueAtTime(0.0, time + duration);
+
   source.connect(gainNode);
-
-  source.start(time);                           
-  source.stop(time + duration);
-
-  gainNode.connect(context.destination);
-  source.connect(context.destination);       // connect the source to the context's destination (the speakers)        
+  gainNode.connect(context.destination);       
 }
 
 function playNotesInColumn($elem) {
@@ -166,17 +156,21 @@ function init() {
   try {
     window.AudioContext = window.AudioContext||window.webkitAudioContext;
     context = new AudioContext();
-    
+
+    gainNode = context.createGain();
+    gainNode.gain.value = 0;
   }
   catch(e) {
   	console.log(e);
     console.log('Web Audio API is not supported in this browser');
   }
 
-  loadSound()
-    .then(loadNoteScale)
+  createSoundBuffer()
+    .then(loadNoteCatalogue)
     .then(loopSound);
 }
+
+window.addEventListener('load', init, false);
 
 </script>
 </body>
