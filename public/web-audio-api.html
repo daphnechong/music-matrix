@@ -240,36 +240,32 @@
 var noteCatalogue=[];
 var gainNode, oscillator;
 var sampleRate = 44100.0;
-var frequency = 440.0
 
-function createSoundBuffer() {
-    var duration = 1 / frequency;
-    var sampleFrameLength = duration * sampleRate;
-    
-    var audioBuffer = context.createBuffer(2, sampleFrameLength, sampleRate);
-    var n = audioBuffer.length;
-    var channelL = audioBuffer.getChannelData(0);
-    var channelR = audioBuffer.getChannelData(1);
-    for (var i = 0; i < n; ++i) {
-        channelL[i] = Math.sin(frequency * 2.0*Math.PI * i / sampleRate);
-        channelR[i] = channelL[i];
-    }
-    return Q(audioBuffer);
-}
-
-function loadNoteCatalogue(buffer) {
-  var numberOfNotes = 12;
-
-  for (var i = 0; i < numberOfNotes; i++) 
-  {
-    noteCatalogue.push({ 
-      buffer: buffer, 
-      playbackRate: Math.pow(2, i / 12), 
-      duration: 0.2
-    });
-  } 
-  return noteCatalogue;
-}
+var frequencies = ['220.00',
+'233.08',
+'246.94',
+'261.63',
+'277.18',
+'293.66',
+'311.13',
+'329.63',
+'349.23',
+'369.99',
+'392.00',
+'415.30',
+'440.00',
+'466.16',
+'493.88',
+'523.25',
+'554.37',
+'587.33',
+'622.25',
+'659.25',
+'698.46',
+'739.99',
+'783.99',
+'830.61',
+'880.00'];
 
 // sound is a wave. 
 // the frequency, or hertz, is the note you hear. it affects how fast the wave oscillates.
@@ -287,45 +283,32 @@ function loadNoteCatalogue(buffer) {
 
 // problems - timeout is starting to lag with multiple notes playing.
 
-function playSound(note) {
+function playSound(index) {
   time = context.currentTime;
-  duration = note.duration;
+  fadeout = 1;
 
-  var source = context.createBufferSource(); // creates a sound source. needs to be done each time. 
-  source.buffer = note.buffer;               // tell the source which sound to play
-  source.playbackRate.value = note.playbackRate;
-  source.loop = true;
-  source.start(time);                           
-  source.stop(time + (duration* 5));
-  
-  // var o1 = context.createOscillator();
-  // o1.type = 'sine';
-  // o1.frequency.value = 261.63;
-
-  // var o2 = context.createOscillator();
-  // o2.type = 'sine';
-  // o2.frequency.value = 622.63;
-
+  var osc = context.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = frequencies[index];
+  osc.start(time);
+  osc.stop(time + fadeout)
 
   // add 'bounce' to note, and fade in/out to avoid clicks.
   var gainNode = context.createGain();
   gainNode.gain.value = 0;
   gainNode.gain.linearRampToValueAtTime(0.3, time + 0.05);
-  gainNode.gain.linearRampToValueAtTime(1, time + 0.08);
-  gainNode.gain.linearRampToValueAtTime(0.3, time + 0.1);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, time + (duration * 5));
+  gainNode.gain.linearRampToValueAtTime(0.5, time + 0.125);
+  gainNode.gain.linearRampToValueAtTime(0.2, time + 0.130);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, time + fadeout);
 
-  source.connect(gainNode);
-  //o1.connect(o2);
-
+  osc.connect(gainNode);
   gainNode.connect(context.destination);       
 }
 
 function playNotesInColumn($elem) {
   $elem.children().each(function() {
     if ($(this).is(':checked')) {
-      var note = noteCatalogue[$(this).val()-1];
-      playSound(note);
+      playSound($(this).val()-1);
     }
   });
   setTimeout(function() { playNotesInColumn($elem) }, 2000);
@@ -351,9 +334,7 @@ function init() {
     console.log('Web Audio API is not supported in this browser');
   }
 
-  createSoundBuffer()
-    .then(loadNoteCatalogue)
-    .then(loopSound);
+  loopSound();
 }
 
 window.addEventListener('load', init, false);
