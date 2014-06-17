@@ -45,7 +45,7 @@
     <input class="button" type="checkbox" value="11"/>
     <input class="button" type="checkbox" value="12"/>
   </div>
-    <div id="group-4">
+  <div id="group-4">
     <input class="button" type="checkbox" value="1"/>
     <input class="button" type="checkbox" value="2"/>
     <input class="button" type="checkbox" value="3"/>
@@ -70,8 +70,9 @@
 var noteCatalogue=[];
 var buffer;
 var sampleRate = 44100.0;
+var noteDuration = 0.2;
 // var numberOfNotes = 72; // play over a 6 octave range
- var noteDuration = 0.2;
+
 //var noteSpacing = noteDuration + 0.005; // leave 5ms of silence between each "note"
 // var lengthInSeconds = numberOfNotes * noteSpacing;
 // var context = 0;
@@ -95,22 +96,21 @@ function createOneCycleSinWaveBuffer(frequency) {
 var context;
 window.addEventListener('load', init, false);
 
-function loadSound(url) {
+function loadSound() {
   buffer = createOneCycleSinWaveBuffer(440.0);
   return Q(buffer); 
 }
 
 function loadNoteScale(buffer) {
   var numberOfNotes = 12;
-  
+
   for (var i = 0; i < numberOfNotes; i++) 
   {
-    var properties = { 
+    noteCatalogue.push({ 
       buffer: buffer, 
       playbackRate: Math.pow(2, i / 12), 
       duration: 0.2
-    }
-    noteCatalogue.push(properties);
+    });
   } 
   return noteCatalogue;
 }
@@ -121,65 +121,61 @@ function playSound(note) {
 
   var source = context.createBufferSource(); // creates a sound source
   source.buffer = note.buffer;         // tell the source which sound to play
-  source.connect(context.destination);       // connect the source to the context's destination (the speakers)
-
-  // Apply quick fade-in and fade-out to avoid clicks.
-  // https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
-  var gainNode = context.createGainNode();
-  gainNode.gain.value = 0;
-  gainNode.gain.setValueAtTime(0, time);
-  gainNode.gain.linearRampToValueAtTime(1, time + 0.005);
-  gainNode.gain.setValueAtTime(1, time + duration - 0.005);
-  gainNode.gain.linearRampToValueAtTime(0, time + duration);
-  source.connect(gainNode);
-  gainNode.connect(context.destination);
-
   source.playbackRate.value = note.playbackRate;
   source.loop = true;
-  source.start(time);                           // play the source now
+  
+  // Apply quick fade-in and fade-out to avoid clicks.
+  // https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
+  var gainNode = context.createGain();
+  gainNode.gain.value = 0;
+  gainNode.gain.setValueAtTime(0, time);
+  gainNode.gain.linearRampToValueAtTime(1, time + 0.7);
+  gainNode.gain.setValueAtTime(1, time + duration - 0.7);
+  gainNode.gain.linearRampToValueAtTime(0, time + duration);
+  source.connect(gainNode);
+
+  source.start(time);                           
   source.stop(time + duration);
-  return buffer;                             // note: on older systems, may have to use deprecated noteOn(time);
+
+  gainNode.connect(context.destination);
+  source.connect(context.destination);       // connect the source to the context's destination (the speakers)        
 }
 
-function playNotes($elem) {
-    console.log($elem.attr('id'));
-    $elem.children().each(function() {
-      if ($(this).is(':checked')) {
-        var note = noteCatalogue[$(this).val()-1];
-        playSound(note);
-      }
-    });
-    setTimeout(function() { playNotes($elem) }, 2000);
+function playNotesInColumn($elem) {
+  console.log($elem.attr('id'));
+
+  $elem.children().each(function() {
+    if ($(this).is(':checked')) {
+      var note = noteCatalogue[$(this).val()-1];
+      playSound(note);
+    }
+  });
+  setTimeout(function() { playNotesInColumn($elem) }, 2000);
 }
 
 function loopSound() {
-   $(".grid").children().each(function(index){
+  $(".grid").children().each(function(index){
     var i = $(this);
     setTimeout(function() { 
-      playNotes(i)
+      playNotesInColumn(i)
     }, index * 500);
   });
 }
 
 function init() {
   try {
-    // Fix up for prefixing
     window.AudioContext = window.AudioContext||window.webkitAudioContext;
     context = new AudioContext();
+    
   }
   catch(e) {
-  	console.log(e)
+  	console.log(e);
     console.log('Web Audio API is not supported in this browser');
   }
 
-  loadSound('http://localhost:3000/sampleTone')
+  loadSound()
     .then(loadNoteScale)
     .then(loopSound);
- 
-  // $(".button").click('click', function() {
-  //   var properties = noteCatalogue[$(this).val()-1];
-  //   playSound(properties)
-  // })
 }
 
 </script>
