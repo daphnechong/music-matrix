@@ -67,7 +67,7 @@
 
 // https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
 // window.onload = init;
-var playbackRates, intervals = [];
+var noteCatalogue=[];
 var buffer;
 var sampleRate = 44100.0;
 // var numberOfNotes = 72; // play over a 6 octave range
@@ -100,33 +100,27 @@ function loadSound(url) {
   return Q(buffer); 
 }
 
-function loopSound(buffer) {
+function loadNoteScale(buffer) {
   var numberOfNotes = 12;
-
+  
   for (var i = 0; i < numberOfNotes; i++) 
   {
-    var semitone = i;
-    var playbackRate = Math.pow(2, semitone / 12);
-
     var properties = { 
       buffer: buffer, 
-      playbackRate: playbackRate, 
+      playbackRate: Math.pow(2, i / 12), 
       duration: 0.2
     }
-
-    playbackRates.push(properties);
+    noteCatalogue.push(properties);
   } 
+  return noteCatalogue;
 }
 
-function playSound(properties) {
-  //buffer, time, playbackRate, duration
-  //buffer = properties.buffer;
+function playSound(note) {
   time = context.currentTime;
-  playbackRate = properties.playbackRate;
-  duration = properties.duration;
+  duration = note.duration;
 
   var source = context.createBufferSource(); // creates a sound source
-  source.buffer = properties.buffer;         // tell the source which sound to play
+  source.buffer = note.buffer;         // tell the source which sound to play
   source.connect(context.destination);       // connect the source to the context's destination (the speakers)
 
   // Apply quick fade-in and fade-out to avoid clicks.
@@ -140,7 +134,7 @@ function playSound(properties) {
   source.connect(gainNode);
   gainNode.connect(context.destination);
 
-  source.playbackRate.value = playbackRate;
+  source.playbackRate.value = note.playbackRate;
   source.loop = true;
   source.start(time);                           // play the source now
   source.stop(time + duration);
@@ -149,7 +143,22 @@ function playSound(properties) {
 
 function playNotes($elem) {
     console.log($elem.attr('id'));
+    $elem.children().each(function() {
+      if ($(this).is(':checked')) {
+        var note = noteCatalogue[$(this).val()-1];
+        playSound(note);
+      }
+    });
     setTimeout(function() { playNotes($elem) }, 2000);
+}
+
+function loopSound() {
+   $(".grid").children().each(function(index){
+    var i = $(this);
+    setTimeout(function() { 
+      playNotes(i)
+    }, index * 500);
+  });
 }
 
 function init() {
@@ -163,17 +172,12 @@ function init() {
     console.log('Web Audio API is not supported in this browser');
   }
 
-  var url = 'http://localhost:3000/sampleTone';
-  loadSound(url).then(loopSound);
-
-  $(".grid").children().each(function(index){
-    var i = $(this);
-    setTimeout(function() { 
-      playNotes(i)
-    }, index * 500);
-  })
+  loadSound('http://localhost:3000/sampleTone')
+    .then(loadNoteScale)
+    .then(loopSound);
+ 
   // $(".button").click('click', function() {
-  //   var properties = playbackRates[$(this).val()-1];
+  //   var properties = noteCatalogue[$(this).val()-1];
   //   playSound(properties)
   // })
 }
