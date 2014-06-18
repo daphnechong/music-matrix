@@ -1,7 +1,15 @@
 <html>
 <head>
   <style>
-    body { background-color: black}
+    body { 
+      margin: 0;
+      padding: 0;
+      border: 0;
+      height: 100%;
+      width: 100%;
+      background: #252122;
+    }
+
     input { display: block;}
 
     /* styling from http://jsfiddle.net/4bs8A/ */
@@ -36,17 +44,42 @@
     }
 
     input[type='checkbox']:checked:after {
-        background: #202020;
+        background: #1c9099;
         color: #fff;
     }
         
-    div { 
+    .grid div { 
       display: block; 
       float: left;
+    }
+
+    .grid {
+      width: 550px;
+      height: 550px;
+      margin: 0 auto;
+    }
+
+    .intro {
+      color: #f0f0f0;
+      font-family: Lato, Arial, sans-serif;
+      margin: 30 auto;
+      width: 550px;
+    }
+
+    a {
+      color: #fff;
     }
   </style>
 </head>
 <body>
+<div class="intro">
+  <p>The sound in this grid is powered by the Web Audio API.</p>
+  <p>It represents two seconds of music, and repeats.
+  <br/>The horizontal axis shows time, and the vertical axis the pitch of the note.</p>
+  <p>You can activate a note by clicking on a square.</p>
+  <p>This was a learning exercise inspired by <a href="http://tonematrix.audiotool.com">ToneMatrix</a>
+</div>
+
 <div class="grid">
   <div id="group-1">
     <input class="button" type="checkbox" value="1"/>
@@ -346,10 +379,6 @@
 //http://noisehack.com/custom-audio-effects-javascript-web-audio-api/
 // https://chromium.googlesource.com/external/WebKit_LayoutTests/+/master/webaudio/audiobuffersource-playbackrate.html
 
-var noteCatalogue=[];
-var gainNode, oscillator;
-var sampleRate = 44100.0;
-
 // this is a C major scale 
 var frequencies = [
 '261.63',  // c4
@@ -371,30 +400,6 @@ var frequencies = [
 
 frequencies.reverse();
 
-// ended up much more mathematical than I intended...!
-// sound is a wave. 
-// the frequency, or hertz, is the note you hear. it affects how fast the wave oscillates.
-// an oscillator can generate you a wave (e.g. sine, triangle, sawtooth) which produces different notes.
-// you can change the frequency to change the pitch of the note. 
-
-// If you are using a fixed length source of wave (e.g. something you downloaded from the internet), 
-//        changing frequency changes the duration of the note.  Use .stop and .start with a duration, and loop the wave.
-// clicks seem to be produced when the frequency 'jumps', producing breaks in the wave. 
-//        also can happen when you try to 'write' multiple sources to the speakers at the same time. 
-// It's a pipeline. Only one thing needs to output to your speakers! (context.destination)
-// everything else - volume, distortion, etc. just chains from the source to the destination.
-// it looks like you can't chain oscillators (they appear to have 0 inputs). but you could possibly chain other audio sources?
-// each audio buffer note can only be played once. you need to recreate each new note to play.
-// demo examples: 
-//  -  plain notes
-//  -  clipping the front of the note to stop the clicking
-//  -  change stop time to add extra duration, + add linear ramp to value to the new duration to fade out
-//  -  add multiple ramps up/down to introduce bouncing
-//  -  change frequencies of notes so that they are all in a common scale 
-//  -  changing the oscillation wave type
-
-// problems - timeout is starting to lag with multiple notes playing.
- 
 function playSound(index) {
   time = context.currentTime;
   fadeout = 1;
@@ -421,7 +426,6 @@ function playSound(index) {
 function playNotesInColumn($elem) {
   $elem.children(':checked').each(function() {
     playSound($(this).val() - 1);
-    $(this).css('border-color', '#eeeeee').animate({backgroundColor:'#202020'}, 'fast')
   });
 
   // Repeat this column every 2 seconds, since there are 16 columns at 125ms intervals. 
@@ -450,7 +454,7 @@ function init() {
   }
   catch(e) {
   	console.log(e);
-    alert('Web Audio API is not supported in this browser. Please use Chrome or Safari');
+    alert('Web Audio API is not supported in this browser.');
   }
 
   loopSound();
