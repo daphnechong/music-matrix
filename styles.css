@@ -9,41 +9,26 @@
 
     input { display: block;}
 
-    /* styling from http://jsfiddle.net/4bs8A/ */
-    input[type=checkbox] {
-          margin-top: -30px;
+
+    input[type="checkbox"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+
+      /* Styling checkbox */
+      width: 30px;
+      height: 30px;
+      margin: 1px;
+      display: block;
+      position: relative;
+      cursor:pointer;
+      background-color: 45484d;
     }
 
-    input[type='checkbox'] {
-        -webkit-font-smoothing: antialiased;
-        text-rendering: optimizeSpeed;
-        width: 30px;
-        height: 30px;
-        margin: 1px;
-        display: block;
-        position: relative;
-        cursor:pointer;
-    }
-    input[type='checkbox']:after {
-        content:"";
-        vertical-align: middle;
-        text-align: center;
-        position: absolute;
-        cursor: pointer;
-        height: 31px;
-        width: 31px;
-        left: 0px;
-        top: 0px;
-        -webkit-box-shadow: inset 0px 1px 1px #fff, 0px 1px 0px #444;
-        -moz-box-shadow: inset 0px 1px 1px #fff, 0px 1px 0px #444;
-        box-shadow: inset 0px 1px 1px #fff, 0px 1px 0px #444;
-        background: #45484d;
+    input[type="checkbox"]:checked {
+      background-color: #1c9099;
     }
 
-    input[type='checkbox']:checked:after {
-        background: #1c9099;
-        color: #fff;
-    }
         
     .grid div { 
       display: block; 
